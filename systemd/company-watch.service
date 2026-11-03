@@ -1,0 +1,17 @@
+[Unit]
+Description=Company Watch news and SEC filing monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=companywatch
+Group=companywatch
+WorkingDirectory=/opt/company-watch
+EnvironmentFile=/opt/company-watch/.env
+ExecStart=/usr/bin/python3 -m company_watch run
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,3 @@
+# Format: TICKER|Company Name|alias one,alias two,drug name
+# Sample configuration, not a recommendation to follow or invest in a company.
+SRPT|Sarepta Therapeutics|ELEVIDYS,delandistrogene moxeparvovec,SRP-9001

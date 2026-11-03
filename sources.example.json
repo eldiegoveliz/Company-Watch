@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "id": "msft_sec",
+      "name": "Microsoft SEC Submissions",
+      "type": "sec_submissions",
+      "ticker": "MSFT",
+      "url": "https://data.sec.gov/submissions/CIK0000789019.json",
+      "normal_interval_seconds": 1800,
+      "warm_interval_seconds": 120,
+      "hot_interval_seconds": 20
+    }
+  ]
+}

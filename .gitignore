@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.venv/
+venv/
+.coverage
+htmlcov/
+*.log
+.DS_Store
+
+# Local research configuration and original personal brief.
+/sources.json
+/watched_tickers.txt
+/first-instructions.txt

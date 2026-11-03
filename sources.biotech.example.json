@@ -1,0 +1,34 @@
+{
+  "sources": [
+    {
+      "id": "fda_press",
+      "name": "FDA Press Announcements",
+      "type": "rss",
+      "url": "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml",
+      "normal_interval_seconds": 900,
+      "warm_interval_seconds": 180,
+      "hot_interval_seconds": 30
+    },
+    {
+      "id": "srpt_sec",
+      "name": "Sarepta SEC Submissions",
+      "type": "sec_submissions",
+      "ticker": "SRPT",
+      "url": "https://data.sec.gov/submissions/CIK0000873303.json",
+      "normal_interval_seconds": 1800,
+      "warm_interval_seconds": 120,
+      "hot_interval_seconds": 20
+    },
+    {
+      "id": "srpt_ir",
+      "name": "Sarepta Newsroom",
+      "type": "html_watch",
+      "ticker": "SRPT",
+      "url": "https://www.sarepta.com/newsroom",
+      "normal_interval_seconds": 1800,
+      "warm_interval_seconds": 120,
+      "hot_interval_seconds": 20,
+      "link_url_contains": "/news-releases/news-release-details/"
+    }
+  ]
+}
