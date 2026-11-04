@@ -56,7 +56,7 @@ def allowed(name: str) -> bool:
         return path.suffix == ".md"
     if path.parent == Path("systemd"):
         return path.suffix == ".service"
-    return path.parent == Path(".github/workflows") and path.suffix in {".yml", ".yaml"}
+    return False
 
 
 def check(root: Path, files: list[str], require_license: bool = False) -> list[str]:

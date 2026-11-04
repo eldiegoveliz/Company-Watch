@@ -59,6 +59,13 @@ class ReleaseTests(unittest.TestCase):
         self.assertTrue(any(p.startswith("private-notes.txt:") for p in problems))
         self.assertTrue(any(p.startswith("LICENSE:") for p in problems))
 
+    def test_github_actions_workflows_are_not_public_release_files(self):
+        workflow = self.root / ".github/workflows/checks.yml"
+        workflow.parent.mkdir(parents=True)
+        workflow.write_text("name: Checks\non: push\n")
+        problems = check(self.root, public_files(self.root))
+        self.assertTrue(any(p.startswith(".github/workflows/checks.yml:") for p in problems))
+
 
 if __name__ == "__main__":
     unittest.main()

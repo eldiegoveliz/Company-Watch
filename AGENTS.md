@@ -3,6 +3,11 @@
 This project can be adapted by coding agents. Preserve the user's preferences
 and explain changes in plain language.
 
+## Run checks locally
+
+GitHub Actions is disabled for this repository. Do not add workflows, trigger
+Actions runs, or enable Actions. Run tests and release checks locally.
+
 ## Preserve existing installations
 
 Use `company_watch` for new imports and commands. `biotech_newswatch` is a
