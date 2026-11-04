@@ -18,6 +18,7 @@ ROOT_FILES = {
     "sources.biotech.example.json", "watched_tickers.biotech.example.txt",
 }
 PRIVATE_FILES = {"sources.json", "watched_tickers.txt", "first-instructions.txt"}
+DOC_IMAGES = {"docs/images/telegram-alert.jpg", "docs/images/telegram-bot-profile.jpg"}
 CONTENT_CHECKS = {
     "possible API key": re.compile(r"\b(?:sk-[A-Za-z0-9_-]{20,}|AIza[A-Za-z0-9_-]{30,})"),
     "possible Telegram bot token": re.compile(r"\b\d{6,}:[A-Za-z0-9_-]{25,}"),
@@ -47,7 +48,7 @@ def public_files(root: Path) -> list[str]:
 
 def allowed(name: str) -> bool:
     path = Path(name)
-    if name in ROOT_FILES:
+    if name in ROOT_FILES or name in DOC_IMAGES:
         return True
     if path.parts[0] in {"company_watch", "biotech_newswatch", "scripts", "tests"}:
         return path.suffix == ".py"
@@ -76,6 +77,11 @@ def check(root: Path, files: list[str], require_license: bool = False) -> list[s
             continue
         if path.stat().st_size > 1_000_000:
             problems.append(f"{name}: file exceeds the 1 MB source-file limit")
+            continue
+        if name in DOC_IMAGES:
+            data = path.read_bytes()
+            if not data.startswith(b"\xff\xd8\xff") or not data.endswith(b"\xff\xd9"):
+                problems.append(f"{name}: expected a JPEG screenshot")
             continue
         try:
             content = path.read_text(encoding="utf-8")
