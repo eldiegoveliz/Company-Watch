@@ -9,11 +9,15 @@ This is a personal project. Don't use its output to trade. Read the sources.
 <p align="center">
   <a href="docs/images/telegram-alert.jpg"><img src="docs/images/telegram-alert.jpg" alt="Telegram alert showing the event, impact, confidence, uncertainty, and SEC source link" width="240"></a>
   <a href="docs/images/telegram-bot-profile.jpg"><img src="docs/images/telegram-bot-profile.jpg" alt="Telegram bot profile and source-link history, with the username redacted" width="240"></a>
-  <a href="docs/images/telegram-links-demo.mp4"><img src="docs/images/telegram-links-demo.gif" alt="Silent looping demo opening SEC filing links from Telegram alerts; click for the MP4" width="240"></a>
 </p>
 
-Screenshots and demo from the earlier biotech version, before the name change.
-Click the demo to watch the [silent MP4](docs/images/telegram-links-demo.mp4).
+Screenshots from the earlier biotech version, before the name change.
+
+## Demo
+
+Opening source filings from Telegram alerts. No sound.
+
+https://github.com/user-attachments/assets/7a7fa37f-094e-4a02-a47f-6deca50e1a50
 
 ## Setup
 
