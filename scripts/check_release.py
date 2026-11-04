@@ -18,7 +18,10 @@ ROOT_FILES = {
     "sources.biotech.example.json", "watched_tickers.biotech.example.txt",
 }
 PRIVATE_FILES = {"sources.json", "watched_tickers.txt", "first-instructions.txt"}
-DOC_IMAGES = {"docs/images/telegram-alert.jpg", "docs/images/telegram-bot-profile.jpg"}
+DOC_MEDIA = {
+    "docs/images/telegram-alert.jpg", "docs/images/telegram-bot-profile.jpg",
+    "docs/images/telegram-links-demo.gif", "docs/images/telegram-links-demo.mp4",
+}
 CONTENT_CHECKS = {
     "possible API key": re.compile(r"\b(?:sk-[A-Za-z0-9_-]{20,}|AIza[A-Za-z0-9_-]{30,})"),
     "possible Telegram bot token": re.compile(r"\b\d{6,}:[A-Za-z0-9_-]{25,}"),
@@ -48,7 +51,7 @@ def public_files(root: Path) -> list[str]:
 
 def allowed(name: str) -> bool:
     path = Path(name)
-    if name in ROOT_FILES or name in DOC_IMAGES:
+    if name in ROOT_FILES or name in DOC_MEDIA:
         return True
     if path.parts[0] in {"company_watch", "biotech_newswatch", "scripts", "tests"}:
         return path.suffix == ".py"
@@ -75,13 +78,18 @@ def check(root: Path, files: list[str], require_license: bool = False) -> list[s
         if not path.is_file():
             problems.append(f"{name}: missing file; stage its deletion")
             continue
-        if path.stat().st_size > 1_000_000:
-            problems.append(f"{name}: file exceeds the 1 MB source-file limit")
+        limit = 10_000_000 if name in DOC_MEDIA else 1_000_000
+        if path.stat().st_size > limit:
+            problems.append(f"{name}: file exceeds the {limit // 1_000_000} MB release-file limit")
             continue
-        if name in DOC_IMAGES:
+        if name in DOC_MEDIA:
             data = path.read_bytes()
-            if not data.startswith(b"\xff\xd8\xff") or not data.endswith(b"\xff\xd9"):
+            if path.suffix == ".jpg" and (not data.startswith(b"\xff\xd8\xff") or not data.endswith(b"\xff\xd9")):
                 problems.append(f"{name}: expected a JPEG screenshot")
+            elif path.suffix == ".gif" and (data[:6] not in {b"GIF87a", b"GIF89a"} or not data.endswith(b";")):
+                problems.append(f"{name}: expected a GIF demo")
+            elif path.suffix == ".mp4" and data[4:8] != b"ftyp":
+                problems.append(f"{name}: expected an MP4 demo")
             continue
         try:
             content = path.read_text(encoding="utf-8")
