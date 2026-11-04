@@ -6,7 +6,7 @@ summarize likely important events. Each alert includes the source link.
 
 This is a personal project. Don't use its output to trade. Read the sources.
 
-<p>
+<p align="center">
   <a href="docs/images/telegram-alert.jpg"><img src="docs/images/telegram-alert.jpg" alt="Telegram alert showing the event, impact, confidence, uncertainty, and SEC source link" width="240"></a>
   <a href="docs/images/telegram-bot-profile.jpg"><img src="docs/images/telegram-bot-profile.jpg" alt="Telegram bot profile and source-link history, with the username redacted" width="240"></a>
 </p>
