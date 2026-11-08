@@ -3,12 +3,31 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass, field
+from datetime import time
 from pathlib import Path
 from typing import Any
 
 from .profiles import get_profile
 
 ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_DAILY_POLL_TIMES_ET = "06:00,06:30,07:00,07:30,08:00,08:30,09:00,09:30,13:00,16:00,16:05,16:30,17:00,17:30"
+
+
+def parse_daily_poll_times(value: str) -> tuple[time, ...]:
+    times = []
+    for part in value.split(","):
+        if not part.strip():
+            continue
+        if len(part.strip()) != 5 or part.strip()[2] != ":":
+            raise ValueError("DAILY_POLL_TIMES_ET must contain comma-separated HH:MM times")
+        try:
+            parsed = time.fromisoformat(part.strip())
+        except ValueError:
+            raise ValueError("DAILY_POLL_TIMES_ET must contain comma-separated HH:MM times") from None
+        if parsed.tzinfo is not None or parsed.second or parsed.microsecond:
+            raise ValueError("DAILY_POLL_TIMES_ET times must be local HH:MM without an offset")
+        times.append(parsed)
+    return tuple(sorted(set(times)))
 
 
 @dataclass(frozen=True)
@@ -39,6 +58,7 @@ class SourceConfig:
     timeout_seconds: int = 12
     enabled: bool = True
     link_url_contains: str = ""
+    daily_polling: bool = True
 
 
 @dataclass(frozen=True)
@@ -69,6 +89,21 @@ class Settings:
     alert_threshold: int = 55
     max_alert_item_age_hours: int = 72
     watch_profile: str = "general"
+    daily_poll_times_et: tuple[time, ...] = parse_daily_poll_times(DEFAULT_DAILY_POLL_TIMES_ET)
+    daily_poll_before_seconds: int = 60
+    daily_poll_after_seconds: int = 600
+    daily_poll_interval_seconds: int = 15
+    poll_fetch_workers: int = 4
+
+    def __post_init__(self) -> None:
+        if self.daily_poll_before_seconds < 0 or self.daily_poll_after_seconds < 0:
+            raise ValueError("Daily polling window durations cannot be negative")
+        if self.daily_poll_before_seconds + self.daily_poll_after_seconds >= 86400:
+            raise ValueError("Daily polling windows must be shorter than 24 hours")
+        if self.daily_poll_interval_seconds < 1:
+            raise ValueError("DAILY_POLL_INTERVAL_SECONDS must be positive")
+        if not 1 <= self.poll_fetch_workers <= 16:
+            raise ValueError("POLL_FETCH_WORKERS must be between 1 and 16")
 
 
 def load_dotenv(path: Path = ROOT / ".env") -> None:
@@ -127,6 +162,11 @@ def get_settings() -> Settings:
         alert_threshold=int(os.environ.get("ALERT_THRESHOLD", "55")),
         max_alert_item_age_hours=int(os.environ.get("MAX_ALERT_ITEM_AGE_HOURS", "72")),
         watch_profile=watch_profile,
+        daily_poll_times_et=parse_daily_poll_times(os.environ.get("DAILY_POLL_TIMES_ET", DEFAULT_DAILY_POLL_TIMES_ET)),
+        daily_poll_before_seconds=int(os.environ.get("DAILY_POLL_BEFORE_SECONDS", "60")),
+        daily_poll_after_seconds=int(os.environ.get("DAILY_POLL_AFTER_SECONDS", "600")),
+        daily_poll_interval_seconds=int(os.environ.get("DAILY_POLL_INTERVAL_SECONDS", "15")),
+        poll_fetch_workers=int(os.environ.get("POLL_FETCH_WORKERS", "4")),
     )
 
 
@@ -167,6 +207,7 @@ def load_sources(path: Path) -> list[SourceConfig]:
                 timeout_seconds=_int_setting(item.get("timeout_seconds"), 12),
                 enabled=bool(item.get("enabled", True)),
                 link_url_contains=item.get("link_url_contains", ""),
+                daily_polling=bool(item.get("daily_polling", True)),
             )
         )
     return [s for s in sources if s.enabled]

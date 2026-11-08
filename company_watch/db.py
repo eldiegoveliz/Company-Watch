@@ -92,6 +92,8 @@ CREATE TABLE IF NOT EXISTS bot_settings (
 
 CREATE INDEX IF NOT EXISTS idx_raw_items_seen ON raw_items(first_seen_at);
 CREATE INDEX IF NOT EXISTS idx_raw_items_ticker ON raw_items(ticker);
+CREATE INDEX IF NOT EXISTS idx_raw_items_pending_analysis
+ON raw_items(event_score DESC, id) WHERE status='pending_analysis';
 CREATE INDEX IF NOT EXISTS idx_catalysts_ticker_time ON catalysts(ticker, expected_at_utc);
 """
 
@@ -170,7 +172,8 @@ class Database:
         row = self.conn.execute("SELECT * FROM source_state WHERE source_id=?", (source_id,)).fetchone()
         return dict(row) if row else {}
 
-    def mark_source_success(self, source_id: str, etag: str | None, last_modified: str | None, status: int | None) -> None:
+    def mark_source_success(self, source_id: str, etag: str | None, last_modified: str | None, status: int | None,
+                            polled_at: str | None = None) -> None:
         self.conn.execute(
             """
             INSERT INTO source_state (source_id, last_polled_at, etag, last_modified, last_status, last_error, fail_count)
@@ -183,11 +186,11 @@ class Database:
                 last_error=NULL,
                 fail_count=0
             """,
-            (source_id, iso_now(), etag, last_modified, status),
+            (source_id, polled_at or iso_now(), etag, last_modified, status),
         )
         self.conn.commit()
 
-    def mark_source_error(self, source_id: str, error: str) -> None:
+    def mark_source_error(self, source_id: str, error: str, polled_at: str | None = None) -> None:
         self.conn.execute(
             """
             INSERT INTO source_state (source_id, last_polled_at, last_error, fail_count)
@@ -197,7 +200,7 @@ class Database:
                 last_error=excluded.last_error,
                 fail_count=source_state.fail_count + 1
             """,
-            (source_id, iso_now(), error[:800]),
+            (source_id, polled_at or iso_now(), error[:800]),
         )
         self.conn.commit()
 
@@ -245,6 +248,39 @@ class Database:
     def raw_item(self, raw_item_id: int) -> dict[str, Any] | None:
         row = self.conn.execute("SELECT * FROM raw_items WHERE id=?", (raw_item_id,)).fetchone()
         return dict(row) if row else None
+
+    def recover_pending_analysis(self) -> None:
+        self.conn.execute("UPDATE raw_items SET status='pending_analysis' WHERE status='processing_analysis'")
+        self.conn.commit()
+
+    def claim_pending_analysis(self) -> dict[str, Any] | None:
+        row = self.conn.execute(
+            "SELECT id FROM raw_items WHERE status='pending_analysis' "
+            "ORDER BY event_score DESC, id LIMIT 1"
+        ).fetchone()
+        if row is None:
+            return None
+        changed = self.conn.execute(
+            "UPDATE raw_items SET status='processing_analysis' WHERE id=? AND status='pending_analysis'",
+            (row["id"],),
+        ).rowcount
+        self.conn.commit()
+        return self.raw_item(row["id"]) if changed else None
+
+    def update_item_classification(self, item: dict[str, Any]) -> None:
+        self.conn.execute(
+            "UPDATE raw_items SET ticker=?, event_type=?, event_score=?, summary=?, raw_text=?, metadata_json=? WHERE id=?",
+            (item.get("ticker"), item.get("event_type"), item.get("event_score", 0), item.get("summary"),
+             item.get("raw_text"), json.dumps(item.get("metadata") or {}), item["id"]),
+        )
+        self.conn.commit()
+
+    def finish_pending_analysis(self, raw_item_id: int, failed: bool = False) -> None:
+        self.conn.execute(
+            "UPDATE raw_items SET status=? WHERE id=? AND status='processing_analysis'",
+            ("analysis_error" if failed else "processed", raw_item_id),
+        )
+        self.conn.commit()
 
     def latest_items(self, limit: int = 10) -> list[dict[str, Any]]:
         rows = self.conn.execute(

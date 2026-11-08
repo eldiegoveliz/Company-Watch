@@ -4,6 +4,8 @@ import hashlib
 import html
 import json
 import re
+import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -14,6 +16,30 @@ from typing import Any
 
 from .config import SourceConfig
 from .profiles import get_profile
+
+
+class RequestPacer:
+    """Space SEC requests across all fetch and document-reading threads."""
+    def __init__(self, interval_seconds: float = 0.25):
+        self.interval_seconds = interval_seconds
+        self._next_request = 0.0
+        self._lock = threading.Lock()
+
+    def wait(self) -> None:
+        with self._lock:
+            delay = self._next_request - time.monotonic()
+            if delay > 0:
+                time.sleep(delay)
+            self._next_request = time.monotonic() + self.interval_seconds
+
+
+SEC_REQUEST_PACER = RequestPacer()
+
+
+def _pace_sec_request(url: str) -> None:
+    host = (urllib.parse.urlsplit(url).hostname or "").lower()
+    if host == "sec.gov" or host.endswith(".sec.gov"):
+        SEC_REQUEST_PACER.wait()
 
 
 @dataclass(frozen=True)
@@ -83,6 +109,7 @@ def fetch_url(source: SourceConfig, user_agent: str, etag: str | None = None, la
     if last_modified:
         headers["If-Modified-Since"] = last_modified
     req = urllib.request.Request(source.url, headers=headers)
+    _pace_sec_request(source.url)
     try:
         with urllib.request.urlopen(req, timeout=source.timeout_seconds) as resp:
             raw = resp.read()
@@ -101,6 +128,7 @@ def fetch_url(source: SourceConfig, user_agent: str, etag: str | None = None, la
 
 def fetch_text_url(url: str, user_agent: str, timeout_seconds: int = 12, max_bytes: int = 750_000) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": user_agent})
+    _pace_sec_request(url)
     with urllib.request.urlopen(req, timeout=timeout_seconds) as resp:
         raw = resp.read(max_bytes)
         charset = resp.headers.get_content_charset() or "utf-8"

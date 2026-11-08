@@ -57,6 +57,9 @@ Without a Telegram token, alerts print in the terminal.
 Edit `watched_tickers.txt` to choose companies and `sources.json` to choose feeds.
 The examples start with Microsoft SEC filings.
 
+The bot also checks automatically at fixed Eastern times each day. See the
+[daily polling schedule](docs/polling.md).
+
 In Telegram:
 
 ```text

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from company_watch.classifiers import classify_text
@@ -44,7 +44,8 @@ class CoreTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             db = Database(Path(tmp) / "test.sqlite")
             db.add_watch("SRPT", "Sarepta Therapeutics")
-            db.add_catalyst("SRPT", "Phase 3 readout", utc_now() + timedelta(minutes=10))
+            now = datetime(2026, 11, 9, 17, tzinfo=UTC)
+            db.add_catalyst("SRPT", "Phase 3 readout", now + timedelta(minutes=10))
             source = SourceConfig(
                 id="srpt_sec",
                 name="SRPT SEC",
@@ -56,7 +57,7 @@ class CoreTests(unittest.TestCase):
                 hot_interval_seconds=20,
             )
             scheduler = AdaptiveScheduler(db, [source])
-            due = scheduler.due_sources()
+            due = scheduler.due_sources(now=now)
             self.assertTrue(due)
             self.assertEqual(due[0].mode, "hot")
             self.assertEqual(due[0].interval_seconds, 20)

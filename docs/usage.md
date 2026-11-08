@@ -23,6 +23,9 @@ default examples include Microsoft SEC submissions. The biotech examples
 include Sarepta SEC submissions, its newsroom, and FDA releases. These are sample
 configurations.
 
+Daily checks run automatically without an announced catalyst. See
+[the polling schedule](polling.md) for times, intervals, and configuration.
+
 Each source defines `normal_interval_seconds`, `warm_interval_seconds`, and
 `hot_interval_seconds`. A catalyst's default warm window runs from 24 hours
 before to 24 hours after the event. Its hot window runs from 2 hours before to
